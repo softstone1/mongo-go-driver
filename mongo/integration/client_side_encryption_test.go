@@ -454,4 +454,38 @@ func TestMongocrypt382PoC(t *testing.T) {
 		mt.Logf("Created key with uuid: %v", uuid)
 		assert.True(mt, callbackCalled, "expected callback to have been called")
 	})
+
+	// Test with empty "aws" document and callback set. Expect callback not to be called.
+	mt.Run("No callback set. Non-empty aws document.", func(mt *mtest.T) {
+		callbackCalled := false
+		kmsProvidersMap := map[string]map[string]interface{}{
+			"aws": {
+				"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
+				"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
+			},
+		}
+		ceOpts := options.ClientEncryption().
+			SetKmsProviders(kmsProvidersMap).
+			SetKeyVaultNamespace("keyvault.datakeys").
+			SetCredentialCallback(func(kmsProvider string) interface{} {
+				callbackCalled = true
+				return nil
+			})
+		ce, err := mongo.NewClientEncryption(mt.Client, ceOpts)
+		defer ce.Close(context.Background())
+		if err != nil {
+			mt.Fatalf("NewClientEncryption error: %v", err)
+		}
+		uuid, err := ce.CreateDataKey(context.Background(), "aws", options.DataKey().SetMasterKey(
+			bson.D{
+				{"key", "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0"},
+				{"region", "us-east-1"},
+			},
+		))
+		if err != nil {
+			mt.Fatalf("CreateDataKey error: %v", err)
+		}
+		mt.Logf("Created key with uuid: %v", uuid)
+		assert.False(mt, callbackCalled, "expected callback not to have been called")
+	})
 }
