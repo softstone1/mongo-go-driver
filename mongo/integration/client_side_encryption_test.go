@@ -11,6 +11,7 @@ package integration
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -379,5 +380,78 @@ func TestClientSideEncryptionCustomCrypt(t *testing.T) {
 			"expected 0 calls to Close, got %v", cc.numCloseCalls)
 		assert.Equal(mt, cc.numBypassAutoEncryptionCalls, 2,
 			"expected 2 calls to BypassAutoEncryption, got %v", cc.numBypassAutoEncryptionCalls)
+	})
+}
+
+func TestMongocrypt382PoC(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().MinServerVersion("5.0").Enterprise(true).CreateClient(false))
+	defer mt.Close()
+
+	if "" == os.Getenv("AWS_ACCESS_KEY_ID") || "" == os.Getenv("AWS_SECRET_ACCESS_KEY") {
+		mt.Skipf("Test requires environment variables to be set: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY")
+	}
+
+	// Test with empty "aws" document and callback set. Expect callback to be called.
+	mt.Run("Callback set", func(mt *mtest.T) {
+		callbackCalled := false
+		kmsProvidersMap := map[string]map[string]interface{}{
+			"aws": {},
+		}
+		ceOpts := options.ClientEncryption().
+			SetKmsProviders(kmsProvidersMap).
+			SetKeyVaultNamespace("keyvault.datakeys").
+			SetCredentialCallback(func(kmsProvider string) interface{} {
+				callbackCalled = true
+				if kmsProvider != "aws" {
+					return nil
+				}
+				return bson.D{
+					{"accessKeyId", os.Getenv("AWS_ACCESS_KEY_ID")},
+					{"secretAccessKey", os.Getenv("SECRET_ACCESS_KEY")},
+				}
+			})
+		ce, err := mongo.NewClientEncryption(mt.Client, ceOpts)
+		defer ce.Close(context.Background())
+		if err != nil {
+			mt.Fatalf("NewClientEncryption error: %v", err)
+		}
+		uuid, err := ce.CreateDataKey(context.Background(), "aws", options.DataKey().SetMasterKey(
+			bson.D{
+				{"key", "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0"},
+				{"region", "us-east-1"},
+			},
+		))
+		if err != nil {
+			mt.Fatalf("CreateDataKey error: %v", err)
+		}
+		mt.Logf("Created key with uuid: %v", uuid)
+		assert.True(mt, callbackCalled, "expected callback to have been called")
+	})
+
+	// Test with empty "aws" document and no callback set. Expect AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables to be used.
+	mt.Run("No callback set", func(mt *mtest.T) {
+		callbackCalled := false
+		kmsProvidersMap := map[string]map[string]interface{}{
+			"aws": {},
+		}
+		ceOpts := options.ClientEncryption().
+			SetKmsProviders(kmsProvidersMap).
+			SetKeyVaultNamespace("keyvault.datakeys")
+		ce, err := mongo.NewClientEncryption(mt.Client, ceOpts)
+		defer ce.Close(context.Background())
+		if err != nil {
+			mt.Fatalf("NewClientEncryption error: %v", err)
+		}
+		uuid, err := ce.CreateDataKey(context.Background(), "aws", options.DataKey().SetMasterKey(
+			bson.D{
+				{"key", "arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0"},
+				{"region", "us-east-1"},
+			},
+		))
+		if err != nil {
+			mt.Fatalf("CreateDataKey error: %v", err)
+		}
+		mt.Logf("Created key with uuid: %v", uuid)
+		assert.True(mt, callbackCalled, "expected callback to have been called")
 	})
 }

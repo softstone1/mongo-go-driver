@@ -11,11 +11,14 @@ import (
 	"fmt"
 )
 
+type CredentialCallbackFn func(kmsProvider string) interface{}
+
 // ClientEncryptionOptions represents all possible options used to configure a ClientEncryption instance.
 type ClientEncryptionOptions struct {
-	KeyVaultNamespace string
-	KmsProviders      map[string]map[string]interface{}
-	TLSConfig         map[string]*tls.Config
+	KeyVaultNamespace  string
+	KmsProviders       map[string]map[string]interface{}
+	TLSConfig          map[string]*tls.Config
+	CredentialCallback CredentialCallbackFn
 }
 
 // ClientEncryption creates a new ClientEncryptionOptions instance.
@@ -115,6 +118,13 @@ func BuildTLSConfig(tlsOpts map[string]interface{}) (*tls.Config, error) {
 	return cfg, nil
 }
 
+// SetCredentialCallback sets an optional callback to supply credentials to a KMS provider.
+// @callback is called when needed. It is passed the name of the needed KMS provider.
+func (c *ClientEncryptionOptions) SetCredentialCallback(callback CredentialCallbackFn) *ClientEncryptionOptions {
+	c.CredentialCallback = callback
+	return c
+}
+
 // MergeClientEncryptionOptions combines the argued ClientEncryptionOptions in a last-one wins fashion.
 func MergeClientEncryptionOptions(opts ...*ClientEncryptionOptions) *ClientEncryptionOptions {
 	ceo := ClientEncryption()
@@ -131,6 +141,9 @@ func MergeClientEncryptionOptions(opts ...*ClientEncryptionOptions) *ClientEncry
 		}
 		if opt.TLSConfig != nil {
 			ceo.TLSConfig = opt.TLSConfig
+		}
+		if opt.CredentialCallback != nil {
+			ceo.CredentialCallback = ceo.CredentialCallback
 		}
 	}
 
