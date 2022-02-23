@@ -52,3 +52,7 @@ func (m *MongoCrypt) CreateExplicitDecryptionContext(doc bsoncore.Document) (*Co
 func (m *MongoCrypt) Close() {
 	panic(cseNotSupportedMsg)
 }
+
+func (m *MongoCrypt) UseNeedCredentialsState() {
+	panic(cseNotSupportedMsg)
+}

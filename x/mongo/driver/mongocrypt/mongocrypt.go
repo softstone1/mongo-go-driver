@@ -4,6 +4,7 @@
 // not use this file except in compliance with the License. You may obtain
 // a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
+//go:build cse
 // +build cse
 
 package mongocrypt
@@ -243,4 +244,8 @@ func (m *MongoCrypt) createErrorFromStatus() error {
 	defer C.mongocrypt_status_destroy(status)
 	C.mongocrypt_status(m.wrapped, status)
 	return errorFromStatus(status)
+}
+
+func (m *MongoCrypt) UseNeedCredentialsState() {
+	C.mongocrypt_setopt_use_need_kms_credentials_state(m.wrapped)
 }
