@@ -33,6 +33,8 @@ type KeyRetrieverFn func(ctx context.Context, filter bsoncore.Document) ([]bsonc
 // MarkCommandFn is a callback used to add encryption markings to a command.
 type MarkCommandFn func(ctx context.Context, db string, cmd bsoncore.Document) (bsoncore.Document, error)
 
+type CredentialCallbackFn func(kmsProvider string) interface{}
+
 // CryptOptions specifies options to configure a Crypt instance.
 type CryptOptions struct {
 	CollInfoFn           CollectionInfoFn
@@ -42,6 +44,7 @@ type CryptOptions struct {
 	SchemaMap            map[string]bsoncore.Document
 	TLSConfig            map[string]*tls.Config
 	BypassAutoEncryption bool
+	CredentialCallback   CredentialCallbackFn
 }
 
 // Crypt is an interface implemented by types that can encrypt and decrypt instances of
@@ -69,11 +72,12 @@ type Crypt interface {
 // crypt consumes the libmongocrypt.MongoCrypt type to iterate the mongocrypt state machine and perform encryption
 // and decryption.
 type crypt struct {
-	mongoCrypt *mongocrypt.MongoCrypt
-	collInfoFn CollectionInfoFn
-	keyFn      KeyRetrieverFn
-	markFn     MarkCommandFn
-	tlsConfig  map[string]*tls.Config
+	mongoCrypt         *mongocrypt.MongoCrypt
+	collInfoFn         CollectionInfoFn
+	keyFn              KeyRetrieverFn
+	markFn             MarkCommandFn
+	tlsConfig          map[string]*tls.Config
+	credentialCallback CredentialCallbackFn
 
 	bypassAutoEncryption bool
 }
@@ -86,6 +90,7 @@ func NewCrypt(opts *CryptOptions) (Crypt, error) {
 		markFn:               opts.MarkFn,
 		tlsConfig:            opts.TLSConfig,
 		bypassAutoEncryption: opts.BypassAutoEncryption,
+		credentialCallback:   opts.CredentialCallback,
 	}
 
 	mongocryptOpts := options.MongoCrypt().SetKmsProviders(opts.KmsProviders).SetLocalSchemaMap(opts.SchemaMap)

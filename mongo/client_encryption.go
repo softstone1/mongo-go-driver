@@ -51,10 +51,11 @@ func NewClientEncryption(keyVaultClient *Client, opts ...*options.ClientEncrypti
 	kr := keyRetriever{coll: ce.keyVaultColl}
 	cir := collInfoRetriever{client: ce.keyVaultClient}
 	ce.crypt, err = driver.NewCrypt(&driver.CryptOptions{
-		KeyFn:        kr.cryptKeys,
-		CollInfoFn:   cir.cryptCollInfo,
-		KmsProviders: kmsProviders,
-		TLSConfig:    ceo.TLSConfig,
+		KeyFn:              kr.cryptKeys,
+		CollInfoFn:         cir.cryptCollInfo,
+		KmsProviders:       kmsProviders,
+		TLSConfig:          ceo.TLSConfig,
+		CredentialCallback: driver.CredentialCallbackFn(ceo.CredentialCallback),
 	})
 	if err != nil {
 		return nil, err
