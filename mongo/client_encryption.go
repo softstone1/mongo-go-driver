@@ -9,6 +9,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -65,7 +66,13 @@ func NewClientEncryption(keyVaultClient *Client, opts ...*options.ClientEncrypti
 		} else {
 			// Use callback to fetch credentials using same method as MONGODB-AWS.
 			credentialCallback = func(kmsProvider string) interface{} {
-				panic("TODO: fetching credentials with MONGODB-AWS not implemented")
+				fmt.Println("TODO: fetching credentials with MONGODB-AWS not fully implemented. This only checks environment variables")
+				return map[string]map[string]interface{}{
+					"aws": {
+						"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
+						"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
+					},
+				}
 			}
 		}
 	}
