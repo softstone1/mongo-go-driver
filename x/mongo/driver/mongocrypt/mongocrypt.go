@@ -38,6 +38,9 @@ func NewMongoCrypt(opts *options.MongoCryptOptions) (*MongoCrypt, error) {
 		wrapped: wrapped,
 	}
 
+	// Opt in to using the NeedCredentialsState before setProviderOptions.
+	crypt.UseNeedCredentialsState()
+
 	// set options in mongocrypt
 	if err := crypt.setProviderOptions(opts.KmsProviders); err != nil {
 		return nil, err

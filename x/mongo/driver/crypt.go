@@ -99,8 +99,6 @@ func NewCrypt(opts *CryptOptions) (Crypt, error) {
 		return nil, err
 	}
 
-	mc.UseNeedCredentialsState()
-
 	c.mongoCrypt = mc
 	return c, nil
 }
