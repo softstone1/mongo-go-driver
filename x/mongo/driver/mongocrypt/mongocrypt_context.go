@@ -4,6 +4,7 @@
 // not use this file except in compliance with the License. You may obtain
 // a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
+//go:build cse
 // +build cse
 
 package mongocrypt
@@ -100,4 +101,14 @@ func (c *Context) createErrorFromStatus() error {
 	defer C.mongocrypt_status_destroy(status)
 	C.mongocrypt_ctx_status(c.wrapped, status)
 	return errorFromStatus(status)
+}
+
+func (c *Context) ProvideKmsProviders(kmsProviders bsoncore.Document) error {
+	providersBinary := newBinaryFromBytes(kmsProviders)
+	defer providersBinary.close()
+
+	if ok := C.mongocrypt_ctx_provide_kms_providers(c.wrapped, providersBinary.wrapped); !ok {
+		return c.createErrorFromStatus()
+	}
+	return nil
 }

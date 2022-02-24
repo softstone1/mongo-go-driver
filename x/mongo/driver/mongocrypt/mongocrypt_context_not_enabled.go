@@ -54,3 +54,7 @@ func (c *Context) Finish() (bsoncore.Document, error) {
 func (c *Context) Close() {
 	panic(cseNotSupportedMsg)
 }
+
+func (c *Context) ProvideKmsProviders (kmsProviders bsoncore.Document) error {
+	panic(cseNotSupportedMsg)
+}
