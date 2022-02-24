@@ -143,7 +143,7 @@ func MergeClientEncryptionOptions(opts ...*ClientEncryptionOptions) *ClientEncry
 			ceo.TLSConfig = opt.TLSConfig
 		}
 		if opt.CredentialCallback != nil {
-			ceo.CredentialCallback = ceo.CredentialCallback
+			ceo.CredentialCallback = opt.CredentialCallback
 		}
 	}
 
