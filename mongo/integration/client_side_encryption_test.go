@@ -392,7 +392,7 @@ func TestMongocrypt382PoC(t *testing.T) {
 	}
 
 	// Test with empty "aws" document and callback set. Expect callback to be called.
-	mt.Run("Callback set", func(mt *mtest.T) {
+	mt.Run("1 Callback set", func(mt *mtest.T) {
 		callbackCalled := false
 		kmsProvidersMap := map[string]map[string]interface{}{
 			"aws": {},
@@ -405,9 +405,12 @@ func TestMongocrypt382PoC(t *testing.T) {
 				if kmsProvider != "aws" {
 					return nil
 				}
-				return bson.D{
-					{"accessKeyId", os.Getenv("AWS_ACCESS_KEY_ID")},
-					{"secretAccessKey", os.Getenv("SECRET_ACCESS_KEY")},
+
+				return map[string]map[string]interface{}{
+					"aws": {
+						"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
+						"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
+					},
 				}
 			})
 		ce, err := mongo.NewClientEncryption(mt.Client, ceOpts)
@@ -429,7 +432,7 @@ func TestMongocrypt382PoC(t *testing.T) {
 	})
 
 	// Test with empty "aws" document and no callback set. Expect AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables to be used.
-	mt.Run("No callback set", func(mt *mtest.T) {
+	mt.Run("2 No callback set", func(mt *mtest.T) {
 		callbackCalled := false
 		kmsProvidersMap := map[string]map[string]interface{}{
 			"aws": {},
@@ -456,7 +459,7 @@ func TestMongocrypt382PoC(t *testing.T) {
 	})
 
 	// Test with empty "aws" document and callback set. Expect callback not to be called.
-	mt.Run("No callback set. Non-empty aws document.", func(mt *mtest.T) {
+	mt.Run("3 No callback set. Non-empty aws document.", func(mt *mtest.T) {
 		callbackCalled := false
 		kmsProvidersMap := map[string]map[string]interface{}{
 			"aws": {
