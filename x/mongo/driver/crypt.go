@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/mongocrypt"
 	"go.mongodb.org/mongo-driver/x/mongo/driver/mongocrypt/options"
@@ -205,6 +206,25 @@ func (c *crypt) executeStateMachine(ctx context.Context, cryptCtx *mongocrypt.Co
 			err = c.decryptKeys(cryptCtx)
 		case mongocrypt.Ready:
 			return cryptCtx.Finish()
+		case mongocrypt.NeedKmsCredentials:
+			// Only "aws" is supported.
+			credentials := c.credentialCallback("aws")
+
+			var credentialsBSON []byte
+			var err error
+			if credentials == nil {
+				// Callback returned nil. Pass an empty document to libmongocrypt.
+				credentialsBSON, err = bson.Marshal(bson.D{})
+			} else {
+				credentialsBSON, err = bson.Marshal(credentials)
+			}
+			if err != nil {
+				return nil, fmt.Errorf("error in Marshal: %v", err)
+			}
+			err = cryptCtx.ProvideKmsProviders(credentialsBSON)
+			if err != nil {
+				return nil, err
+			}
 		default:
 			return nil, fmt.Errorf("invalid Crypt state: %v", state)
 		}
