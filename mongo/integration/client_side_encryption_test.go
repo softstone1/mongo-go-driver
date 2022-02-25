@@ -400,11 +400,8 @@ func TestMongocrypt382PoC(t *testing.T) {
 		ceOpts := options.ClientEncryption().
 			SetKmsProviders(kmsProvidersMap).
 			SetKeyVaultNamespace("keyvault.datakeys").
-			SetCredentialCallback(func(kmsProvider string) interface{} {
+			SetCredentialCallback(func() interface{} {
 				callbackCalled = true
-				if kmsProvider != "aws" {
-					return nil
-				}
 
 				return map[string]map[string]interface{}{
 					"aws": {
@@ -470,7 +467,7 @@ func TestMongocrypt382PoC(t *testing.T) {
 		ceOpts := options.ClientEncryption().
 			SetKmsProviders(kmsProvidersMap).
 			SetKeyVaultNamespace("keyvault.datakeys").
-			SetCredentialCallback(func(kmsProvider string) interface{} {
+			SetCredentialCallback(func() interface{} {
 				callbackCalled = true
 				return nil
 			})

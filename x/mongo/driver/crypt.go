@@ -34,7 +34,7 @@ type KeyRetrieverFn func(ctx context.Context, filter bsoncore.Document) ([]bsonc
 // MarkCommandFn is a callback used to add encryption markings to a command.
 type MarkCommandFn func(ctx context.Context, db string, cmd bsoncore.Document) (bsoncore.Document, error)
 
-type CredentialCallbackFn func(kmsProvider string) interface{}
+type CredentialCallbackFn func() interface{}
 
 // CryptOptions specifies options to configure a Crypt instance.
 type CryptOptions struct {
@@ -207,8 +207,7 @@ func (c *crypt) executeStateMachine(ctx context.Context, cryptCtx *mongocrypt.Co
 		case mongocrypt.Ready:
 			return cryptCtx.Finish()
 		case mongocrypt.NeedKmsCredentials:
-			// Only "aws" is supported.
-			credentials := c.credentialCallback("aws")
+			credentials := c.credentialCallback()
 
 			var credentialsBSON []byte
 			var err error

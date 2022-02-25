@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-type CredentialCallbackFn func(kmsProvider string) interface{}
+type CredentialCallbackFn func() interface{}
 
 // ClientEncryptionOptions represents all possible options used to configure a ClientEncryption instance.
 type ClientEncryptionOptions struct {
