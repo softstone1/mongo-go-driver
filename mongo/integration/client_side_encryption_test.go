@@ -430,7 +430,6 @@ func TestMongocrypt382PoC(t *testing.T) {
 
 	// Test with empty "aws" document and no callback set. Expect AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables to be used.
 	mt.Run("2 Empty aws document. No callback set", func(mt *mtest.T) {
-		callbackCalled := false
 		kmsProvidersMap := map[string]map[string]interface{}{
 			"aws": {},
 		}
@@ -452,7 +451,6 @@ func TestMongocrypt382PoC(t *testing.T) {
 			mt.Fatalf("CreateDataKey error: %v", err)
 		}
 		mt.Logf("Created key with uuid: %v", uuid)
-		assert.True(mt, callbackCalled, "expected callback to have been called")
 	})
 
 	// Test with non-empty "aws" document and callback set. Expect callback not to be called.
