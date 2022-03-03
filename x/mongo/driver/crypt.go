@@ -34,7 +34,7 @@ type KeyRetrieverFn func(ctx context.Context, filter bsoncore.Document) ([]bsonc
 // MarkCommandFn is a callback used to add encryption markings to a command.
 type MarkCommandFn func(ctx context.Context, db string, cmd bsoncore.Document) (bsoncore.Document, error)
 
-type CredentialCallbackFn func() interface{}
+type CredentialCallbackFn func(kmsProvider string) interface{}
 
 // CryptOptions specifies options to configure a Crypt instance.
 type CryptOptions struct {
@@ -207,7 +207,8 @@ func (c *crypt) executeStateMachine(ctx context.Context, cryptCtx *mongocrypt.Co
 		case mongocrypt.Ready:
 			return cryptCtx.Finish()
 		case mongocrypt.NeedKmsCredentials:
-			credentials := c.credentialCallback()
+			// NeedKmsCredentials only applies to "aws" currently.
+			credentials := c.credentialCallback("aws")
 
 			var credentialsBSON []byte
 			var err error
@@ -215,7 +216,9 @@ func (c *crypt) executeStateMachine(ctx context.Context, cryptCtx *mongocrypt.Co
 				// Callback returned nil. Pass an empty document to libmongocrypt.
 				credentialsBSON, err = bson.Marshal(bson.D{})
 			} else {
-				credentialsBSON, err = bson.Marshal(credentials)
+				credentialsBSON, err = bson.Marshal(bson.M{
+					"aws": credentials,
+				})
 			}
 			if err != nil {
 				return nil, fmt.Errorf("error in Marshal: %v", err)

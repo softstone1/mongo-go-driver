@@ -43,7 +43,7 @@ func NewClientEncryption(keyVaultClient *Client, opts ...*options.ClientEncrypti
 	db, coll := splitNamespace(ceo.KeyVaultNamespace)
 	ce.keyVaultColl = ce.keyVaultClient.Database(db).Collection(coll, keyVaultCollOpts)
 
-	credentialCallback := func() interface{} {
+	credentialCallback := func(kmsProvider string) interface{} {
 		// By default, do nothing.
 		return nil
 	}
@@ -65,13 +65,11 @@ func NewClientEncryption(keyVaultClient *Client, opts ...*options.ClientEncrypti
 			credentialCallback = ceo.CredentialCallback
 		} else {
 			// Use callback to fetch credentials using same method as MONGODB-AWS.
-			credentialCallback = func() interface{} {
+			credentialCallback = func(kmsProvider string) interface{} {
 				fmt.Println("TODO: fetching credentials with MONGODB-AWS not fully implemented. This only checks environment variables")
-				return map[string]map[string]interface{}{
-					"aws": {
-						"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
-						"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
-					},
+				return map[string]interface{}{
+					"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
+					"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
 				}
 			}
 		}

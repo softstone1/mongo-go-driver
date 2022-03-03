@@ -400,14 +400,13 @@ func TestMongocrypt382PoC(t *testing.T) {
 		ceOpts := options.ClientEncryption().
 			SetKmsProviders(kmsProvidersMap).
 			SetKeyVaultNamespace("keyvault.datakeys").
-			SetCredentialCallback(func() interface{} {
+			SetCredentialCallback(func(kmsProvider string) interface{} {
 				callbackCalled = true
+				assert.Equal(mt, kmsProvider, "aws", "expected callback to have been called with 'aws' kmsProvider, got %v", kmsProvider)
 
-				return map[string]map[string]interface{}{
-					"aws": {
-						"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
-						"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
-					},
+				return map[string]interface{}{
+					"accessKeyId":     os.Getenv("AWS_ACCESS_KEY_ID"),
+					"secretAccessKey": os.Getenv("AWS_SECRET_ACCESS_KEY"),
 				}
 			})
 		ce, err := mongo.NewClientEncryption(mt.Client, ceOpts)
@@ -465,7 +464,7 @@ func TestMongocrypt382PoC(t *testing.T) {
 		ceOpts := options.ClientEncryption().
 			SetKmsProviders(kmsProvidersMap).
 			SetKeyVaultNamespace("keyvault.datakeys").
-			SetCredentialCallback(func() interface{} {
+			SetCredentialCallback(func(kmsProvider string) interface{} {
 				callbackCalled = true
 				return nil
 			})
